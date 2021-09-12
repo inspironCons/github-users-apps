@@ -3,6 +3,7 @@ package com.dicoding.githubusersapp.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.dicoding.githubusersapp.databinding.ItemListUserBinding
 import com.dicoding.githubusersapp.model.Users
 
@@ -19,14 +20,16 @@ class MainAdapter:RecyclerView.Adapter<MainAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemListUserBinding.inflate(LayoutInflater.from(parent.context),parent,false)
-        //drawable to bitmap
         return ViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = users[position]
 
-        holder.avatar.setImageResource(item.avatar)
+        Glide.with(holder.itemView.context)
+            .load(item.avatar)
+            .into(holder.avatar)
+
         holder.username.text = item.username
         holder.itemView.setOnClickListener {
             onItemCallback.onItemClicked(item)

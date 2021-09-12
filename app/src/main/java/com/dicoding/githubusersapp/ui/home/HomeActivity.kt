@@ -1,10 +1,12 @@
 package com.dicoding.githubusersapp.ui.home
 
 import android.content.Intent
-import android.content.res.TypedArray
 import android.os.Bundle
-import androidx.appcompat.app.ActionBar
+import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.dicoding.githubusersapp.R
@@ -13,98 +15,111 @@ import com.dicoding.githubusersapp.databinding.ActivityHomeBinding
 import com.dicoding.githubusersapp.model.Users
 import com.dicoding.githubusersapp.ui.detailuser.DetailActivity
 import java.util.Calendar
+import java.util.concurrent.Executors
 
 
 class HomeActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHomeBinding
-    private lateinit var rvList:RecyclerView
+    private lateinit var rvList: RecyclerView
     private lateinit var adapterList: MainAdapter
-    private lateinit var dataUsername:Array<String>
-    private lateinit var dataName:Array<String>
-    private lateinit var dataAvatar:TypedArray
-    private lateinit var dataCompany:Array<String>
-    private lateinit var dataLocation:Array<String>
-    private lateinit var dataRepository:IntArray
-    private lateinit var dataFollower:IntArray
-    private lateinit var dataFollowing:IntArray
+    private lateinit var homeViewModel: HomeViewModel
+    private var toast:Toast? = null
 
-    private var users = arrayListOf<Users>()
-
-    companion object{
-        const val EXTRA_DATA = "EXTRA_DATA"
-    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val actionBar:ActionBar? = supportActionBar
-        actionBar?.hide()
-
+        homeViewModel = ViewModelProvider(this,ViewModelProvider.NewInstanceFactory()).get(HomeViewModel::class.java)
 
         rvList = binding.rvList
         adapterList = MainAdapter()
-        prepareItem()
-        addItem()
+        searchUsername()
+        whenErrorSearch()
         clickItems()
         showRecycleView()
 
-        //dynamic greeting
         binding.tvGreetings.text = greeting()
     }
 
+    private fun searchUsername() {
+        binding.searchBarValue.addTextChangedListener { s->
+            val search = s.toString()
+            adapterList.setItem(emptyList())
+            if(search.length >= 5){
+                showLoading(true)
+                val executor = Executors.newSingleThreadExecutor()
+                executor.execute {
+                    homeViewModel.getUsers(search)
+                }
+            }else{
+                showEmptyState(true)
+            }
+        }
+    }
+
+    private fun whenErrorSearch() {
+        homeViewModel.catchErrorMessage.observe(this){msg->
+            toast?.cancel()
+            toast = Toast.makeText(this@HomeActivity,msg,Toast.LENGTH_LONG)
+            toast?.show()
+            showLoading(false)
+            showEmptyState(true)
+        }
+    }
+
     private fun showRecycleView() {
-        rvList.layoutManager = GridLayoutManager(this,2)
-        adapterList.setItem(users)
+        rvList.layoutManager = GridLayoutManager(this, 2)
+        homeViewModel.getUsersList().observe(this){ users->
+            showEmptyState(false)
+            if(users.isNotEmpty()){
+                adapterList.setItem(users)
+            }else{
+                showEmptyState(true)
+            }
+            showLoading(false)
+        }
         rvList.adapter = adapterList
     }
 
-    private fun prepareItem() {
-        dataUsername = resources.getStringArray(R.array.username)
-        dataName =resources.getStringArray(R.array.name)
-        dataAvatar =resources.obtainTypedArray(R.array.avatar)
-        dataCompany =resources.getStringArray(R.array.company)
-        dataLocation =resources.getStringArray(R.array.location)
-        dataRepository =resources.getIntArray(R.array.repository)
-        dataFollower =resources.getIntArray(R.array.followers)
-        dataFollowing =resources.getIntArray(R.array.following)
-    }
-
-    private fun addItem() {
-        for(position in dataUsername.indices){
-            users.add(
-                Users(
-                    username = dataUsername[position],
-                    name = dataName[position],
-                    avatar = dataAvatar.getResourceId(position,-1),
-                    company = dataCompany[position],
-                    location = dataLocation[position],
-                    repository = dataRepository[position],
-                    follower = dataFollower[position],
-                    following = dataFollowing[position]
-                )
-            )
-        }
-
-    }
-
-    private fun clickItems(){
+    private fun clickItems() {
         adapterList.setOnItemCallback(object : MainAdapter.OnItemCallback {
             override fun onItemClicked(user: Users) {
-                val mIntent = Intent(this@HomeActivity,DetailActivity::class.java)
-                mIntent.putExtra(EXTRA_DATA,user)
+                val mIntent = Intent(this@HomeActivity, DetailActivity::class.java)
+                mIntent.putExtra(EXTRA_USERNAME,user.username)
                 startActivity(mIntent)
             }
         })
     }
 
-    private fun greeting():String{
-        val calendar:Calendar = Calendar.getInstance()
-        return when(calendar.get(Calendar.HOUR_OF_DAY)){
-            in 0..11->"Good Morning Reviewer"
-            in 12..15->"Good Afternoon Reviewer"
-            in 16..20->"Good Evening Reviewer"
-            else->"Good Night Reviewer"
+    private fun greeting(): String {
+        val calendar: Calendar = Calendar.getInstance()
+        return when (calendar.get(Calendar.HOUR_OF_DAY)) {
+            in 0..11 -> resources.getString(R.string.good_morning_reviewer)
+            in 12..15 -> resources.getString(R.string.good_afternoon_reviewer)
+            in 16..20 -> resources.getString(R.string.good_evening_reviewer)
+            else -> resources.getString(R.string.good_night_reviewer)
         }
     }
+
+    private fun showEmptyState(state:Boolean){
+        if(state){
+            binding.viewEmptyState?.visibility = View.VISIBLE
+        }else{
+            binding.viewEmptyState?.visibility = View.GONE
+        }
+    }
+
+    private fun showLoading(state: Boolean) {
+        if (state) {
+            binding.loader.visibility = View.VISIBLE
+        } else {
+            binding.loader.visibility = View.GONE
+        }
+    }
+
+    companion object{
+        const val EXTRA_USERNAME = "EXTRA_USERNAME"
+    }
+
 }

@@ -6,12 +6,12 @@
     android:background="@color/white">
 
     <ImageView
-        android:id="@+id/bg_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_centerInParent="true"
         android:src="@drawable/gradient_card"
-        android:scaleType="fitXY"/>
+        android:scaleType="fitXY"
+        android:contentDescription="@string/image_github"/>
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/icon_gif"
         android:layout_width="wrap_content"

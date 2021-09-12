@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import com.dicoding.githubusersapp.databinding.ActivitySplashScreenBinding
 import com.dicoding.githubusersapp.ui.home.HomeActivity
 
@@ -26,10 +27,12 @@ class SplashScreen : AppCompatActivity() {
         animateName.alpha(0f)
 
 
-        Handler().postDelayed({
-            startActivity(Intent(this, HomeActivity::class.java))
-            finish()
-        },delay+500)
+        Looper.myLooper()?.let {
+            Handler(it).postDelayed({
+                startActivity(Intent(this, HomeActivity::class.java))
+                finish()
+            }, delay + 500)
+        }
 
     }
 }

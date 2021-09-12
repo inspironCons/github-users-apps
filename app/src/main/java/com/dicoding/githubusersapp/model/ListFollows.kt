@@ -1,7 +1,6 @@
 package com.dicoding.githubusersapp.model
 
-data class Users(
+data class ListFollows(
     var username:String? =null,
-    var avatar:String?=null,
+    var avatar:String?=null
 )
-
