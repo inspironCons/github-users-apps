@@ -16,7 +16,7 @@ object ServiceBuilder {
             val requestBuilder = original.newBuilder()
                 .header(
                     "Authorization",
-                    "token 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"
+                    ""
                 )
             val request = requestBuilder.build()
             chain.proceed(request)
